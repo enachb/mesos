@@ -236,6 +236,26 @@ struct Executor
       shutdown(false),
       resources(_info.resources()) {}
 
+  Executor(const Executor& that)
+    : id(that.id),
+      info(that.info),
+      frameworkId(that.frameworkId),
+      directory(that.directory),
+      uuid(that.uuid),
+      pid(that.pid),
+      shutdown(that.shutdown),
+      resources(that.resources),
+      queuedTasks(that.queuedTasks),
+      launchedTasks(), // Manually copy the tasks below!
+      completedTasks(that.completedTasks)
+  {
+    // Manually copy the launchedTasks so that we don't share the Task
+    // pointer (and thus possibly delete it twice).
+    foreachvalue (Task* task, that.launchedTasks) {
+      launchedTasks[task->task_id()] = new Task(*task);
+    }
+  }
+
   ~Executor()
   {
     // Delete the tasks.
@@ -315,6 +335,10 @@ struct Executor
   hashmap<TaskID, Task*> launchedTasks;
 
   std::list<Task> completedTasks;
+
+private:
+  // No assigning.
+  Executor& operator = (const Executor&);
 };
 
 
